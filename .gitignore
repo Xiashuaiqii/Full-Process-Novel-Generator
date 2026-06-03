@@ -1,5 +1,5 @@
 node_modules
 .next
-.npm-cache
+.npm-cache/
 prisma
 .env
