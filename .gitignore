@@ -1,9 +1,5 @@
 node_modules
 .next
-out
+.npm-cache
+prisma
 .env
-prisma/dev.db
-prisma/dev.db-journal
-prisma/dev.db-shm
-prisma/dev.db-wal
-*.log
