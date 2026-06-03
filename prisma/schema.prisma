@@ -1,0 +1,380 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model LocalUser {
+  id        String   @id @default(cuid())
+  name      String   @default("Local User")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DeepSeekSettings {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  apiKeyEncrypted String?
+  apiKeyMasked    String?
+  baseUrl         String   @default("https://api.deepseek.com")
+  betaBaseUrl     String   @default("https://api.deepseek.com/beta")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  profiles DeepSeekTaskProfile[]
+}
+
+model DeepSeekTaskProfile {
+  id                 String   @id @default(cuid())
+  settingsId         String
+  taskType           String
+  model              String
+  thinkingEnabled    Boolean
+  reasoningEffort    String
+  temperature        Float
+  topP               Float
+  maxTokens          Int
+  stream             Boolean
+  streamIncludeUsage Boolean
+  stopSequences      Json
+  logprobs           Boolean
+  topLogprobs        Int
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  settings DeepSeekSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+
+  @@unique([settingsId, taskType])
+}
+
+model Novel {
+  id           String   @id @default(cuid())
+  userId       String
+  title        String
+  genre        String?
+  theme        String?
+  description  String?
+  writingStyle String?
+  targetReader String?
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Volume {
+  id        String   @id @default(cuid())
+  novelId   String
+  title     String
+  summary   String?
+  sortOrder Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([novelId, sortOrder])
+}
+
+model Chapter {
+  id          String   @id @default(cuid())
+  novelId     String
+  volumeId    String?
+  title       String
+  chapterNo   Int
+  outline     String?
+  content     String?
+  summaryShort String?
+  summaryLong  String?
+  status      String   @default("draft")
+  wordCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([novelId, chapterNo])
+  @@index([volumeId])
+}
+
+model ChapterVersion {
+  id               String   @id @default(cuid())
+  chapterId        String
+  content          String
+  source           String
+  model            String?
+  promptSnapshot   String?
+  requestSnapshot  Json?
+  responseSnapshot Json?
+  createdAt        DateTime @default(now())
+
+  @@index([chapterId, createdAt])
+}
+
+model KnowledgeEntry {
+  id             String   @id @default(cuid())
+  novelId        String
+  title          String
+  type           String
+  content        String
+  isFixedContext Boolean  @default(false)
+  priority       Int      @default(100)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([novelId, type])
+}
+
+model Character {
+  id                       String   @id @default(cuid())
+  novelId                  String
+  name                     String
+  alias                    String?
+  gender                   String?
+  age                      String?
+  identity                 String?
+  personality              String?
+  appearance               String?
+  motivation               String?
+  secret                   String?
+  factionId                String?
+  currentLocationId        String?
+  realmLevel               String?
+  ability                  String?
+  status                   String   @default("active")
+  firstAppearanceChapterId String?
+  lastAppearanceChapterId  String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([novelId, name])
+}
+
+model CharacterStateHistory {
+  id              String   @id @default(cuid())
+  characterId     String
+  chapterId       String?
+  locationId      String?
+  realmLevel      String?
+  physicalStatus  String?
+  mentalStatus    String?
+  importantAction String?
+  changeSummary   String?
+  createdAt       DateTime @default(now())
+
+  @@index([characterId, createdAt])
+}
+
+model Location {
+  id            String   @id @default(cuid())
+  novelId       String
+  name          String
+  type          String
+  parentId      String?
+  description   String?
+  climate       String?
+  culture       String?
+  dangerLevel   String?
+  currentStatus String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([novelId, name])
+}
+
+model Faction {
+  id                  String   @id @default(cuid())
+  novelId             String
+  name                String
+  type                String
+  description         String?
+  leaderCharacterId   String?
+  territoryLocationId String?
+  ideology            String?
+  strengthLevel       String?
+  currentStatus       String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([novelId, name])
+}
+
+model CharacterRelationship {
+  id                   String   @id @default(cuid())
+  novelId              String
+  characterAId         String
+  characterBId         String
+  relationshipType     String
+  relationshipStrength Int      @default(0)
+  description          String?
+  currentStatus        String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([novelId, characterAId, characterBId])
+}
+
+model RelationshipHistory {
+  id             String   @id @default(cuid())
+  relationshipId String
+  chapterId      String?
+  beforeStatus   String?
+  afterStatus    String?
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  @@index([relationshipId, createdAt])
+}
+
+model Foreshadowing {
+  id                      String   @id @default(cuid())
+  novelId                 String
+  title                   String
+  description             String
+  plantedChapterId        String?
+  expectedRevealChapterId String?
+  actualRevealChapterId   String?
+  status                  String   @default("planted")
+  importance              String   @default("normal")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([novelId, status])
+}
+
+model ForeshadowingRelation {
+  id              String   @id @default(cuid())
+  foreshadowingId String
+  targetType      String
+  targetId        String
+  createdAt       DateTime @default(now())
+
+  @@index([foreshadowingId])
+}
+
+model Item {
+  id                String   @id @default(cuid())
+  novelId           String
+  name              String
+  type              String?
+  description       String?
+  ownerCharacterId  String?
+  currentLocationId String?
+  ability           String?
+  currentStatus     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([novelId, name])
+}
+
+model TimelineEvent {
+  id            String   @id @default(cuid())
+  novelId       String
+  chapterId     String?
+  eventOrder    Int?
+  eventTimeText String?
+  title         String
+  description   String
+  importance    String   @default("normal")
+  createdAt     DateTime @default(now())
+
+  @@index([novelId, chapterId])
+}
+
+model GenerationTask {
+  id                    String   @id @default(cuid())
+  userId                String
+  novelId               String
+  chapterId             String?
+  taskType              String
+  status                String   @default("pending")
+  model                 String
+  requestPayload        Json?
+  responsePayload       Json?
+  errorMessage          String?
+  promptTokens          Int?
+  completionTokens      Int?
+  totalTokens           Int?
+  promptCacheHitTokens  Int?
+  promptCacheMissTokens Int?
+  reasoningTokens       Int?
+  finishReason          String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([novelId, chapterId, taskType])
+}
+
+model KnowledgeUpdateProposal {
+  id               String    @id @default(cuid())
+  novelId          String
+  chapterId        String?
+  generationTaskId String?
+  proposalType     String
+  action           String
+  targetTable      String
+  targetId         String?
+  title            String?
+  beforeData       Json?
+  afterData        Json?
+  reason           String?
+  confidence       Float?
+  status           String    @default("pending")
+  reviewedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([novelId, chapterId, status])
+}
+
+model PromptTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  type      String
+  content   String
+  isSystem  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AppLog {
+  id               String   @id @default(cuid())
+  level            String
+  scope            String
+  message          String
+  details          Json?
+  stack            String?
+  requestPath      String?
+  method           String?
+  novelId          String?
+  chapterId        String?
+  generationTaskId String?
+  createdAt        DateTime @default(now())
+
+  @@index([level, scope, createdAt])
+  @@index([novelId, chapterId])
+}
+
+model AiPromptLog {
+  id               String   @id @default(cuid())
+  generationTaskId String?
+  novelId          String?
+  chapterId        String?
+  taskType         String
+  model            String
+  baseUrlMode      String
+  messages         Json
+  contextSnapshot  Json?
+  tools            Json?
+  toolChoice       Json?
+  requestParams    Json?
+  responsePreview  String?
+  finishReason     String?
+  usage            Json?
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+
+  @@index([novelId, chapterId, taskType])
+  @@index([generationTaskId])
+}
