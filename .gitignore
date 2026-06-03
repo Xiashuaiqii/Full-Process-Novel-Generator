@@ -3,3 +3,4 @@ node_modules
 .npm-cache/
 prisma
 .env
+prisma/
